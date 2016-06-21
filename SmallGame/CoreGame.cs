@@ -33,7 +33,7 @@ namespace SmallGame
 
         public CoreGame()
         {
-            Graphics = new GraphicsDeviceManager(this);
+            Graphics = new GraphicsDeviceManager(this) { SynchronizeWithVerticalRetrace = false };
             DataLoader = new DataLoader();
             Services = new GameServices();
 
