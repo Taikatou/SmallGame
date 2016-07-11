@@ -29,12 +29,12 @@ namespace SmallGame.GameObjects
         /// <summary>
         /// Gets the type of this object. This is the Name of the class name of this object.
         /// </summary>
-        public string Type { get; internal set; }
+        public string Type { get; set; }
 
         /// <summary>
         /// Gets the Id of this object. This is either set from the level data, or is a random Guid.
         /// </summary>
-        public string Id { get; internal set; }
+        public string Id { get; set; }
 
         /// <summary>
         /// Gets the state of this object. "New", "Ok", or "Dead"

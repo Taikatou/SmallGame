@@ -36,7 +36,7 @@ namespace SmallGame
             Graphics = new GraphicsDeviceManager(this) { SynchronizeWithVerticalRetrace = false };
             DataLoader = new DataLoader();
             Services = new GameServices();
-
+            Content.RootDirectory = "Content";
 
             Services.RegisterService<IResourceService>(new ResourceService());
             Services.RegisterService<IRenderService>(new RenderService());
