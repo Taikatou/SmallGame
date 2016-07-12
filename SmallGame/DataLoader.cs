@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using Newtonsoft.Json;
 using SmallGame.GameObjects;
+using System.Diagnostics;
 
 namespace SmallGame
 {
@@ -136,7 +137,6 @@ namespace SmallGame
     /// <typeparam name="G"></typeparam>
     public class StandardGameObjectParser<G> : GameObjectParser<G> where G : GameObject
     {
-
         public override G Parse(LevelDataObject obj)
         {
             var g = Activator.CreateInstance<G>();
@@ -157,7 +157,9 @@ namespace SmallGame
         public Dictionary<string, LevelDataObjectParser> Parsers { get; private set; } 
 
         public DataLoader() : this(new Dictionary<string, LevelDataObjectParser>())
-        { }
+        {
+
+        }
 
         public DataLoader(Dictionary<string, LevelDataObjectParser> parsers)
         {
@@ -199,58 +201,55 @@ namespace SmallGame
                 {
                     json = File.ReadAllText(jsonPath);
                 }
-                catch (Exception ex) { }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.ToString());
+                }
             }
             return json;
         }
 
+        public T LoadJson<T>(string jsonString) where T : GameLevel
+        {
+            var levelData = JsonConvert.DeserializeObject<LevelData>(jsonString);
+
+            var lvl = Activator.CreateInstance<T>();
+            lvl.Data = levelData;
+
+            levelData.Objects.ForEach(obj =>
+            {
+                if (String.IsNullOrWhiteSpace(obj.Type))
+                    return; // don't parse any object that doesnt have a type.
+
+                if (Parsers.ContainsKey(obj.Type))
+                {
+                    var parsedObj = Parsers[obj.Type].ParseFunction(obj);
+
+                    if (parsedObj is GameObject)
+                    {
+                        lvl.Objects.Add((GameObject)parsedObj);
+                    }
+                }
+            });
+            return lvl;
+        }
+
         public T Load<T>(string jsonPath) where T : GameLevel
         {
-            
-            //var json = File.ReadAllText(jsonPath);
-            //using (var fileStream = new FileStream(jsonPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            //using (var textReader = new StreamReader(fileStream))
-            {
-                var json = AttemptToRead(jsonPath);
+            var json = AttemptToRead(jsonPath);
 
-                var levelData = JsonConvert.DeserializeObject<LevelData>(json);
-
-                var lvl = Activator.CreateInstance<T>();
-                lvl.Data = levelData;
-
-                levelData.Objects.ForEach(obj =>
-                {
-
-                    if (String.IsNullOrWhiteSpace(obj.Type))
-                        return; // don't parse any object that doesnt have a type.
-
-                    if (Parsers.ContainsKey(obj.Type))
-                    {
-                        var parsedObj = Parsers[obj.Type].ParseFunction(obj);
-
-                        if (parsedObj is GameObject)
-                        {
-                            lvl.Objects.Add((GameObject) parsedObj);
-                        }
-                    }
-
-                });
-
-                return lvl;
-            }
+            return LoadJson<T>(json);
         }
 
         public T LoadAndWatch<T>(string jsonPath, Action<T> onLoad) where T : GameLevel
         {
-            
-            
             var watcher = new FileSystemWatcher(Directory.GetCurrentDirectory()  + "/Data", jsonPath);
+            Debug.WriteLine("Load: " + watcher.Path);
             watcher.Changed += (s, a) =>
             {
                 Thread.Sleep(100);
                 Console.WriteLine("FILE HAS BEEN CHANGED " + jsonPath);
                 onLoad(Load<T>("Data/" + jsonPath));
-                
             };
             watcher.NotifyFilter = NotifyFilters.LastWrite;
             watcher.EnableRaisingEvents = true;
@@ -258,6 +257,5 @@ namespace SmallGame
             onLoad(lvl);
             return lvl;
         }
-
     }
 }
